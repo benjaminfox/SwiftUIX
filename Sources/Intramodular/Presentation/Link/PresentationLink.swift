@@ -43,6 +43,7 @@ public struct PresentationLink<Destination: View, Label: View>: PresentationLink
         _isPresented ?? $_internal_isPresented
     }
     
+    @inlinable
     public var body: some View {
         Group {
             if modalPresentationStyle == .automatic {
@@ -68,7 +69,10 @@ public struct PresentationLink<Destination: View, Label: View>: PresentationLink
     }
 }
 
+// MARK: - API -
+
 extension PresentationLink {
+    @inline(never)
     public init(
         destination: Destination,
         onDismiss: (() -> ())?,
@@ -80,6 +84,7 @@ extension PresentationLink {
         self.label = label()
     }
     
+    @inline(never)
     public init(
         destination: Destination,
         isPresented: Binding<Bool>,
@@ -92,7 +97,58 @@ extension PresentationLink {
     }
 }
 
+extension View {
+    /// Adds a destination to present when this view is pressed.
+    @inlinable
+    public func onPress<Destination: View>(present destination: Destination) -> some View {
+        modifier(_PresentOnPressViewModifier(destination: destination))
+    }
+    
+    /// Adds a destination to present when this view is pressed.
+    @inlinable
+    public func onPress<Destination: View>(
+        present destination: Destination,
+        isPresented: Binding<Bool>
+    ) -> some View {
+        PresentationLink(
+            destination: destination,
+            isPresented: isPresented,
+            label: { self.contentShape(Rectangle()) }
+        )
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
 // MARK: - Auxiliary Implementation -
+
+@usableFromInline
+struct _PresentOnPressViewModifier<Destination: View>: ViewModifier {
+    @usableFromInline
+    @Environment(\.presenter) var presenter
+    
+    @usableFromInline
+    let destination: Destination
+    
+    @usableFromInline
+    init(destination: Destination) {
+        self.destination = destination
+    }
+    
+    @usableFromInline
+    func body(content: Content) -> some View {
+        presenter.ifSome { presenter in
+            Button(action: { presenter.present(self.destination) }) {
+                content.contentShape(Rectangle())
+            }
+        }.else {
+            PresentationLink(
+                destination: destination,
+                label: { content.contentShape(Rectangle()) }
+            )
+            .buttonStyle(PlainButtonStyle())
+        }
+    }
+}
 
 extension PresentationLink {
     @usableFromInline
@@ -100,10 +156,14 @@ extension PresentationLink {
         private let destination: Destination
         private let isPresented: Binding<Bool>
         private let onDismiss: (() -> ())?
-        
+
+        @usableFromInline
         @State var id = UUID()
         
+        @usableFromInline
         @Environment(\.environmentBuilder) var environmentBuilder
+        
+        @usableFromInline
         @Environment(\.modalPresentationStyle) var modalPresentationStyle
         
         @usableFromInline
@@ -117,7 +177,8 @@ extension PresentationLink {
             self.onDismiss = onDismiss
         }
         
-        private var presentation: AnyModalPresentation? {
+        @usableFromInline
+        var presentation: AnyModalPresentation? {
             guard isPresented.wrappedValue else {
                 return nil
             }

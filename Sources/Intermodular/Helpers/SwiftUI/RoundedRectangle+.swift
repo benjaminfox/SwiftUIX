@@ -14,20 +14,81 @@ extension View {
     @inlinable
     public func border<S: ShapeStyle>(
         _ content: S,
+        width lineWidth: CGFloat = 1,
         cornerRadius: CGFloat,
-        style: RoundedCornerStyle = .circular,
-        width: CGFloat = 1
+        antialiased: Bool
+    ) -> some View {
+        self.cornerRadius(cornerRadius, antialiased: antialiased)
+            .overlay(
+                LineWidthInsetRoundedRectangle(
+                    cornerRadius: cornerRadius,
+                    style: .circular,
+                    lineWidth: lineWidth
+                )
+                .stroke(content, lineWidth: lineWidth)
+            )
+            .padding(lineWidth / 2)
+    }
+    
+    @inlinable
+    public func border<S: ShapeStyle>(
+        _ content: S,
+        width lineWidth: CGFloat = 1,
+        cornerRadius: CGFloat,
+        style: RoundedCornerStyle = .circular
     ) -> some View {
         clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: style))
             .overlay(
                 LineWidthInsetRoundedRectangle(
                     cornerRadius: cornerRadius,
                     style: style,
-                    lineWidth: width
+                    lineWidth: lineWidth
                 )
-                .stroke(content, lineWidth: width)
+                .stroke(content, lineWidth: lineWidth)
             )
-            .padding(width / 2)
+            .padding(lineWidth / 2)
+    }
+}
+
+extension View {
+    @available(*, deprecated, message: "Please use View.border(_:width:cornerRadius:antialiased:) instead.")
+    @inlinable
+    public func border<S: ShapeStyle>(
+        _ content: S,
+        cornerRadius: CGFloat,
+        width lineWidth: CGFloat = 1,
+        antialiased: Bool
+    ) -> some View {
+        self.cornerRadius(cornerRadius, antialiased: antialiased)
+            .overlay(
+                LineWidthInsetRoundedRectangle(
+                    cornerRadius: cornerRadius,
+                    style: .circular,
+                    lineWidth: lineWidth
+                )
+                .stroke(content, lineWidth: lineWidth)
+            )
+            .padding(lineWidth / 2)
+    }
+    
+    @available(*, deprecated, message: "Please use View.border(_:width:cornerRadius:style:) instead.")
+    @inlinable
+    public func border<S: ShapeStyle>(
+        _ content: S,
+        cornerRadius: CGFloat,
+        width lineWidth: CGFloat = 1,
+        style: RoundedCornerStyle = .circular
+    ) -> some View {
+        clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: style))
+            .overlay(
+                LineWidthInsetRoundedRectangle(
+                    cornerRadius: cornerRadius,
+                    style: style,
+                    lineWidth: lineWidth
+                )
+                .stroke(content, lineWidth: lineWidth)
+            )
+            .padding(lineWidth / 2)
     }
 }
 

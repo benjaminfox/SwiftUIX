@@ -31,6 +31,63 @@ public struct TextView<Label: View>: View {
     }
 }
 
+// MARK: - API -
+
+extension TextView where Label == EmptyView {
+    public init(
+        text: Binding<String>,
+        onEditingChanged: @escaping (Bool) -> Void = { _ in },
+        onCommit: @escaping () -> Void = { }
+    ) {
+        self.label = EmptyView()
+        self._text = text
+        self.onEditingChanged = onEditingChanged
+        self.onCommit = onCommit
+    }
+    
+    public init(
+        text: Binding<String?>,
+        onEditingChanged: @escaping (Bool) -> Void = { _ in },
+        onCommit: @escaping () -> Void = { }
+    ) {
+        self.init(
+            text: text.withDefaultValue(String()),
+            onEditingChanged: onEditingChanged,
+            onCommit: onCommit
+        )
+    }
+}
+
+extension TextView where Label == Text {
+    public init<S: StringProtocol>(
+        _ title: S,
+        text: Binding<String>,
+        onEditingChanged: @escaping (Bool) -> Void = { _ in },
+        onCommit: @escaping () -> Void = { }
+    ) {
+        self.label = Text(title).foregroundColor(.placeholderText)
+        self._text = text
+        self.onEditingChanged = onEditingChanged
+        self.onCommit = onCommit
+    }
+    
+    public init<S: StringProtocol>(
+        _ title: S,
+        text: Binding<String?>,
+        onEditingChanged: @escaping (Bool) -> Void = { _ in },
+        onCommit: @escaping () -> Void = { }
+    ) {
+        self.init(
+            title,
+            text: text.withDefaultValue(String()),
+            onEditingChanged: onEditingChanged,
+            onCommit: onCommit
+        )
+    }
+}
+
+// MARK: - Implementation -
+
 fileprivate struct _TextView {
     @Binding private var text: String
     
@@ -48,27 +105,9 @@ fileprivate struct _TextView {
     }
 }
 
-// MARK: - Extensions -
-
-extension TextView where Label == Text {
-    public init<S: StringProtocol>(
-        _ title: S,
-        text: Binding<String>,
-        onEditingChanged: @escaping (Bool) -> Void = { _ in },
-        onCommit: @escaping () -> Void = { }
-    ) {
-        self.label = Text(title).foregroundColor(.placeholderText)
-        self._text = text
-        self.onEditingChanged = onEditingChanged
-        self.onCommit = onCommit
-    }
-}
-
 #if os(iOS) || os(tvOS)
 
 import UIKit
-
-// MARK: - Protocol Implementations -
 
 extension _TextView: UIViewRepresentable {
     typealias UIViewType = _UITextView
@@ -114,7 +153,8 @@ extension _TextView: UIViewRepresentable {
         
         uiView.backgroundColor = nil
         
-        // As default font of UITextView is smaller than SwiftUI. `.preferredFont(forTextStyle: .body)` is required when environment's font is nil. 
+        // `UITextView`'s default font is smaller than SwiftUI's default font.
+        // `.preferredFont(forTextStyle: .body)` is used when `context.environment.font` is nil.
         uiView.font = context.environment.font?.toUIFont() ?? .preferredFont(forTextStyle: .body)
         #if !os(tvOS)
         uiView.isEditable = context.environment.isEnabled
